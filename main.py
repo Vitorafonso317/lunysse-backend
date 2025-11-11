@@ -1,9 +1,10 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.database import engine, Base
-from routers import auth, patients, psychologists, appointments
 from dotenv import load_dotenv
+from models import models
+from core.database import engine, Base
+from routers import auth, patients, psychologists, appointments, requests, ml_analysis, reports  # todos os routers
  
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -12,7 +13,7 @@ load_dotenv()
 Base.metadata.create_all(bind=engine)
  
 app = FastAPI(
-    title="Blurosiere API",
+    title="Lunysse API",
     description="API para sistema de agendamento psicológico",
     version="1.0.0"
 )
@@ -27,19 +28,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
  
-# Inclui os routers
+# Inclui os routers (rotas principais da API)
 app.include_router(auth.router)
 app.include_router(patients.router)
 app.include_router(psychologists.router)
 app.include_router(appointments.router)
+app.include_router(requests.router)
+app.include_router(ml_analysis.router)
+app.include_router(reports.router)
  
  
  
+# Rotas básicas de teste e status
 @app.get("/")
 async def root():
-    return {"message": "Blurosiere API - Sistema de Agendamento Psicológico"}
+    return {"message": "Lunysse API - Sistema de Agendamento Psicológico"}
  
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+ 
  

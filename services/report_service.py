@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
-from app.models.models import Appointment, Patient, AppointmentStatus
-from app.shemas.schemas import ReportData, ReportStatus, frequencyData, StatusData, RiskAlert
-from app.services.ml_services import calculate_patient_risk
+from models.models import Appointment, Patient, AppointmentStatus
+from schemas.schemas import ReportsData, ReportStats, FrequencyData, StatusData, RiskAlert
+from services.ml_services import calculate_patient_risk
 from typing import List
 import random
 from datetime import datetime, date
 
-def generate_report(db: Session, psychologist_id: int) -> ReportData:
+def generate_report(db: Session, psychologist_id: int) -> ReportsData:
 
     Appointments = db.query(Appointment).filter(Appointment.psychologist_id == psychologist_id).all()
     patients = db.query(Patient).filter(Patient.psychologist_id == psychologist_id).all()  
@@ -22,7 +22,7 @@ def generate_report(db: Session, psychologist_id: int) -> ReportData:
     ml_risk_analysis = calculate_patient_risk(db, psychologist_id)
     high_risk_patients = [p for p in ml_risk_analysis if p["risk"] in ["Alto", "Moderado"]]
 
-    stats = ReportStatus(
+    stats = ReportStats(
         active_patients=len(patients),
         total_sessions=total_sessions,
         completed_sessions=completed_sessions,
@@ -31,7 +31,7 @@ def generate_report(db: Session, psychologist_id: int) -> ReportData:
     )
 
     months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-    frequency_data = [frequencyData(month=month, sessions=random.randint(10, 30)) for month in months]
+    frequency_data = [FrequencyData(month=month, sessions=random.randint(10, 30)) for month in months]
 
     status_data = []
     if completed_sessions > 0:
@@ -61,7 +61,7 @@ def generate_report(db: Session, psychologist_id: int) -> ReportData:
         except (KeyError, TypeError) as e:
             continue
 
-    return ReportData(
+    return ReportsData(
         stats=stats,
         frequency_data=frequency_data,
         status_data=status_data,
