@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database import get_db    
+from core.database import get_db
 from models.models import User, UserType
 from schemas.schemas import ReportsData
 from services.auth_service import get_current_user
@@ -14,16 +14,33 @@ async def get_reports(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.type != UserType.PSICÓLOGO:
+    # Verifica se é um psicólogo
+    if current_user.type != UserType.PSICOLOGO:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Apenas psicólogos podem acessar relatórios"
         )
-    
+
+
+    # Impede acesso a relatórios de outros psicólogos
     if current_user.id != psychologist_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Você só pode acessar seus próprios relatórios"
         )
 
-    return generate_report(db, psychologist_id)
+    # Gera o relatório
+    try:
+        return generate_report(db, psychologist_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao gerar relatório: {str(e)}"
+        )
+
+        return report
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao gerar relatório: {str(e)}"
+        )

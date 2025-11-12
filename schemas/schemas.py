@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import date, datetime
 from typing import Optional, List
 from models.models import UserType, AppointmentStatus, RequestStatus
- 
+
 # =========================================================
 # USER SCHEMAS
 # =========================================================
@@ -10,34 +10,38 @@ class UserBase(BaseModel):
     email: EmailStr
     name: str
     type: UserType
- 
+
+
 class UserCreate(UserBase):
     password: str
     specialty: Optional[str] = None
     crp: Optional[str] = None
     phone: Optional[str] = None
     birth_date: date
- 
+
+
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
- 
+
+
 class User(UserBase):
     id: int
     specialty: Optional[str] = None
     crp: Optional[str] = None
     phone: Optional[str] = None
     created_at: datetime
- 
+
     class Config:
         from_attributes = True
- 
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: User
- 
- 
+
+
 # =========================================================
 # PATIENT SCHEMAS
 # =========================================================
@@ -46,10 +50,12 @@ class PatientBase(BaseModel):
     email: EmailStr
     phone: str
     birth_date: date
- 
+
+
 class PatientCreate(PatientBase):
     psychologist_id: int
- 
+
+
 class Patient(PatientBase):
     id: int
     age: int
@@ -57,11 +63,11 @@ class Patient(PatientBase):
     psychologist_id: Optional[int] = None
     total_session: Optional[int] = 0
     created_at: datetime
- 
+
     class Config:
         from_attributes = True
- 
- 
+
+
 # =========================================================
 # APPOINTMENT SCHEMAS
 # =========================================================
@@ -73,10 +79,12 @@ class AppointmentBase(BaseModel):
     duration: Optional[int] = 50
     notes: Optional[str] = None
     full_report: Optional[str] = None
- 
+
+
 class AppointmentCreate(AppointmentBase):
     psychologist_id: Optional[int] = None
- 
+
+
 class AppointmentUpdate(BaseModel):
     date: Optional[date] = None
     time: Optional[str] = None
@@ -85,17 +93,18 @@ class AppointmentUpdate(BaseModel):
     duration: Optional[int] = None
     notes: Optional[str] = None
     full_report: Optional[str] = None
- 
+
+
 class AppointmentSchema(AppointmentBase):
     id: int
     psychologist_id: int
     status: AppointmentStatus
     created_at: datetime
- 
+
     class Config:
         from_attributes = True
- 
- 
+
+
 # =========================================================
 # REQUEST SCHEMAS
 # =========================================================
@@ -108,25 +117,28 @@ class RequestBase(BaseModel):
     urgency: str
     preferred_dates: List[str]
     preferred_times: List[str]
- 
+
+
 class RequestCreate(RequestBase):
     pass
- 
+
+
 class RequestUpdate(BaseModel):
     status: RequestStatus
     notes: Optional[str] = None
- 
+
+
 class Request(RequestBase):
     id: int
     status: RequestStatus
     notes: str
     created_at: datetime
     updated_at: Optional[datetime] = None
- 
+
     class Config:
         from_attributes = True
- 
- 
+
+
 # =========================================================
 # PSYCHOLOGIST SCHEMAS
 # =========================================================
@@ -135,11 +147,11 @@ class Psychologist(BaseModel):
     name: str
     specialty: str
     crp: str
- 
+
     class Config:
         from_attributes = True
- 
- 
+
+
 # =========================================================
 # REPORTS & ANALYTICS SCHEMAS
 # =========================================================
@@ -147,30 +159,31 @@ class ReportStats(BaseModel):
     active_patients: int
     total_sessions: int
     completed_sessions: int
+    canceled_sessions: int
+    scheduled_sessions: int
     attendance_rate: str
-    risk_alerts: int
- 
+    risk_alerts: List[dict]  # ✅ lista de alertas de risco (não int)
+
+
 class FrequencyData(BaseModel):
     month: str
     sessions: int
- 
+
+
 class StatusData(BaseModel):
     name: str
     value: int
     color: str
- 
+
+
 class RiskAlert(BaseModel):
     id: int
     patient: str
     risk: str
     reason: str
     date: str
- 
+
+
 class ReportsData(BaseModel):
-    status: ReportStats
-    frequency_data: List[FrequencyData]
-    status_data: List[StatusData]
-    patient_data: List[StatusData]
+    stats: ReportStats   # ✅ nome igual ao que você usa no código
     risk_alerts: List[RiskAlert]
- 
- 

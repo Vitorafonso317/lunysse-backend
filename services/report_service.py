@@ -1,70 +1,65 @@
 from sqlalchemy.orm import Session
 from models.models import Appointment, Patient, AppointmentStatus
-from schemas.schemas import ReportsData, ReportStats, FrequencyData, StatusData, RiskAlert
+from schemas.schemas import ReportsData, ReportStats
 from services.ml_services import calculate_patient_risk
-from typing import List
-import random
-from datetime import datetime, date
 
 def generate_report(db: Session, psychologist_id: int) -> ReportsData:
+    try:
+        print(f"🧩 [REPORT] Iniciando relatório do psicólogo {psychologist_id}")
 
-    Appointments = db.query(Appointment).filter(Appointment.psychologist_id == psychologist_id).all()
-    patients = db.query(Patient).filter(Patient.psychologist_id == psychologist_id).all()  
+        # Buscar dados no banco
+        appointments = db.query(Appointment).filter(Appointment.psychologist_id == psychologist_id).all()
+        patients = db.query(Patient).filter(Patient.psychologist_id == psychologist_id).all()
 
-    total_sessions = len(Appointments)
-    completed_sessions = len([apt for apt in Appointments if apt.status == AppointmentStatus.CONCLUIDO])
-    canceled_sessions = len([apt for apt in Appointments if apt.status == AppointmentStatus.CANCELADO])
-    scheduled_sessions = len([apt for apt in Appointments if apt.status == AppointmentStatus.AGENDADO])
+        print(f"   • Agendamentos encontrados: {len(appointments)}")
+        print(f"   • Pacientes encontrados: {len(patients)}")
 
-    patients_with_sessions = set(apt.patient_id for apt in Appointments)
-    patients_without_sessions = len([p for p in patients if p.id not in patients_with_sessions])
+        # Contagens básicas
+        total_sessions = len(appointments)
+        completed_sessions = len([a for a in appointments if a.status == AppointmentStatus.CONCLUIDO])
+        canceled_sessions = len([a for a in appointments if a.status == AppointmentStatus.CANCELADO])
+        scheduled_sessions = len([a for a in appointments if a.status == AppointmentStatus.AGENDADO])
 
-    ml_risk_analysis = calculate_patient_risk(db, psychologist_id)
-    high_risk_patients = [p for p in ml_risk_analysis if p["risk"] in ["Alto", "Moderado"]]
+        print(f"   • Sessões: {total_sessions}")
+        print(f"   • Concluídas: {completed_sessions}")
+        print(f"   • Canceladas: {canceled_sessions}")
+        print(f"   • Agendadas: {scheduled_sessions}")
 
-    stats = ReportStats(
-        active_patients=len(patients),
-        total_sessions=total_sessions,
-        completed_sessions=completed_sessions,
-        attendance_rate=f"{(completed_sessions / total_sessions * 100):.1f}" if total_sessions > 0 else "0.0",
-        risk_alerts=len(high_risk_patients)
-    )
+        # Calcular taxa de comparecimento
+        valid_sessions = completed_sessions + canceled_sessions
+        attendance_rate = (completed_sessions / valid_sessions * 100) if valid_sessions > 0 else 0
 
-    months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-    frequency_data = [FrequencyData(month=month, sessions=random.randint(10, 30)) for month in months]
+        # Análise de risco via ML
+        ml_risk_analysis = calculate_patient_risk(db, psychologist_id)
+        print(f"   • Resultados ML retornados: {len(ml_risk_analysis)}")
 
-    status_data = []
-    if completed_sessions > 0:
-        status_data.append(StatusData(name="Concluidas", value=completed_sessions, color="#26B0BF"))
-    if canceled_sessions > 0:
-        status_data.append(StatusData(name="Canceladas", value=canceled_sessions, color="#ef4444"))
-    if scheduled_sessions > 0:
-        status_data.append(StatusData(name="Agendadas", value=scheduled_sessions, color="#10b981"))
+        if not ml_risk_analysis:
+            ml_risk_analysis = []
 
-    patients_data = []
-    patients_with_sessions_count = len(patients) - patients_without_sessions
-    if patients_with_sessions_count > 0:
-        patients_data.append(StatusData(name="Com Sessões", value=patients_with_sessions_count, color="#26B0BF"))
-    if patients_without_sessions > 0:
-        patients_data.append(StatusData(name="Sem Sessões", value=patients_without_sessions, color="#ef4444"))
+        # Filtra pacientes de alto e moderado risco
+        high_risk_patients = [p for p in ml_risk_analysis if p.get("risk", "").lower() in ["alto", "moderado"]]
 
-    risk_alerts = []
-    for patient_risk in high_risk_patients[:5]:
-        try:
-            risk_alerts.append(RiskAlert(
-                id=patient_risk.get("id", 0),
-                patient=patient_risk.get("patient", "Paciente Desconhecido"),
-                risk=patient_risk.get("risk", "Baixo"),
-                reason=patient_risk.get("reason", "Sem informação"),
-                date=patient_risk.get("last_appointment") or date.today().isoformat()
-            ))
-        except (KeyError, TypeError) as e:
-            continue
+        # Cria estatísticas para o relatório
+        stats = ReportStats(
+            active_patients=len(patients),
+            total_sessions=total_sessions,
+            completed_sessions=completed_sessions,
+            canceled_sessions=canceled_sessions,
+            scheduled_sessions=scheduled_sessions,
+            attendance_rate=f"{attendance_rate:.1f}",
+            risk_alerts=[p["patient"] for p in high_risk_patients]  # nomes dos pacientes de risco
+        )
 
-    return ReportsData(
-        stats=stats,
-        frequency_data=frequency_data,
-        status_data=status_data,
-        patients_data=patients_data,
-        risk_alerts=risk_alerts
-    )
+        print("✅ [REPORT] Estatísticas geradas com sucesso")
+
+        # Retorna relatório completo
+        return ReportsData(
+            stats=stats,
+            risk_alerts=high_risk_patients
+        )
+
+    except Exception as e:
+        import traceback
+        print("❌ [REPORT] ERRO AO GERAR RELATÓRIO")
+        traceback.print_exc()
+        raise e

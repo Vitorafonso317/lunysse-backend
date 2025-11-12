@@ -46,24 +46,41 @@ def calculate_patient_risk(db: Session, psychologist_id: int) -> List[Dict]:
 def _extract_patient_metrics(appointments: List[Appointment]) -> Dict:
     """Extrai métricas relevantes dos agendamentos"""
     now = datetime.now().date()
- 
+
+    # Remove agendamentos sem data
+    appointments = [apt for apt in appointments if apt.date is not None]
+    if not appointments:
+        return {
+            "total_appointments": 0,
+            "completed_appointments": 0,
+            "canceled_appointments": 0,
+            "cancellation_rate": 0,
+            "days_since_last": 999,
+            "frequency_per_month": 0,
+            "appointments_last_30": 0,
+            "appointments_last_60": 0,
+            "appointments_last_90": 0,
+            "recent_trend": 0,
+            "has_future_appointments": False
+        }
+
     # ➤ Separar por status
     completed = [apt for apt in appointments if apt.status == AppointmentStatus.CONCLUIDO]
     canceled = [apt for apt in appointments if apt.status == AppointmentStatus.CANCELADO]
     scheduled = [apt for apt in appointments if apt.status == AppointmentStatus.AGENDADO]
- 
+
     # ➤ Últimos 30, 60 e 90 dias
     last_30_days = [apt for apt in appointments if (now - apt.date).days <= 30]
     last_60_days = [apt for apt in appointments if (now - apt.date).days <= 60]
     last_90_days = [apt for apt in appointments if (now - apt.date).days <= 90]
- 
+
     # ➤ Dias desde última consulta
     days_since_last = (now - appointments[0].date).days if appointments else 999
- 
+
     # ➤ Taxa de cancelamento
     total_appointments = len(appointments)
     cancellation_rate = len(canceled) / total_appointments if total_appointments > 0 else 0
- 
+
     # ➤ Frequência (consultas por mês)
     if appointments:
         first_appointment = min(apt.date for apt in appointments)
@@ -71,9 +88,10 @@ def _extract_patient_metrics(appointments: List[Appointment]) -> Dict:
         frequency_per_month = len(completed) / months_active
     else:
         frequency_per_month = 0
-        
+
     recent_completed = len([apt for apt in completed if (now - apt.date).days <= 30])
     previous_completed = len([apt for apt in completed if 30 < (now - apt.date).days <= 60])
+
     return {
         "total_appointments": total_appointments,
         "completed_appointments": len(completed),
@@ -87,7 +105,7 @@ def _extract_patient_metrics(appointments: List[Appointment]) -> Dict:
         "recent_trend": recent_completed - previous_completed,
         "has_future_appointments": len(scheduled) > 0
     }
- 
+
 def _calculate_risk_score(metrics: Dict) -> int:
     """
     Calcula score de risco (0-100) baseado nas métricas

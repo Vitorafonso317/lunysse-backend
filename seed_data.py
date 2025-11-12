@@ -1,12 +1,13 @@
-
 from sqlalchemy.orm import Session
 from core.database import SessionLocal, engine
 from models.models import Base, User, Patient, Appointment, Request, UserType, AppointmentStatus, RequestStatus
 from Utils import get_password_hash
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 import json
+
 # Cria as tabelas
 Base.metadata.create_all(bind=engine)
+
 def seed_database():
     db = SessionLocal()
     try:
@@ -16,7 +17,14 @@ def seed_database():
         db.query(Patient).delete()
         db.query(User).delete()
         db.commit()
-        # Cria usuários (psicólogos e pacientes)
+
+        # 🔹 Resetar contador de IDs (importante no SQLite)
+        db.execute("DELETE FROM sqlite_sequence;")
+        db.commit()
+
+        # ============================================================
+        # 🧠 1️⃣ USUÁRIOS (IDs 1–99)
+        # ============================================================
         users_data = [
             {
                 "id": 2,
@@ -54,13 +62,15 @@ def seed_database():
             }
         ]
         for user_data in users_data:
-            user = User(**user_data)
-            db.add(user)
+            db.add(User(**user_data))
         db.commit()
-        # Cria pacientes
+
+        # ============================================================
+        # 🧍‍♀️ 2️⃣ PACIENTES (IDs 100–199)
+        # ============================================================
         patients_data = [
             {
-                "id": 20,
+                "id": 100,
                 "name": "Fernanda Lima",
                 "email": "fernanda.lima@email.com",
                 "phone": "(11) 99999-5555",
@@ -70,7 +80,7 @@ def seed_database():
                 "psychologist_id": 2
             },
             {
-                "id": 6,
+                "id": 101,
                 "name": "Lucas Pereira",
                 "email": "lucas.pereira@email.com",
                 "phone": "(11) 99999-6666",
@@ -80,7 +90,7 @@ def seed_database():
                 "psychologist_id": 2
             },
             {
-                "id": 7,
+                "id": 102,
                 "name": "Camila Rodrigues",
                 "email": "camila.rodrigues@email.com",
                 "phone": "(11) 99999-7777",
@@ -90,7 +100,7 @@ def seed_database():
                 "psychologist_id": 2
             },
             {
-                "id": 5,
+                "id": 103,
                 "name": "Maria Santos",
                 "email": "paciente@test.com",
                 "phone": "(11) 99999-0001",
@@ -101,15 +111,17 @@ def seed_database():
             }
         ]
         for patient_data in patients_data:
-            patient = Patient(**patient_data)
-            db.add(patient)
+            db.add(Patient(**patient_data))
         db.commit()
-        # Cria agendamentos
+
+        # ============================================================
+        # 📅 3️⃣ AGENDAMENTOS (IDs 1000–1999)
+        # ============================================================
         today = date.today()
         appointments_data = [
             {
-                "id": 8,
-                "patient_id": 5,
+                "id": 1000,
+                "patient_id": 103,
                 "psychologist_id": 2,
                 "date": today - timedelta(days=2),
                 "time": "14:00",
@@ -120,8 +132,8 @@ def seed_database():
                 "full_report": "Paciente respondeu bem às intervenções."
             },
             {
-                "id": 9,
-                "patient_id": 6,
+                "id": 1001,
+                "patient_id": 101,
                 "psychologist_id": 2,
                 "date": today + timedelta(days=2),
                 "time": "15:00",
@@ -132,8 +144,8 @@ def seed_database():
                 "full_report": ""
             },
             {
-                "id": 10,
-                "patient_id": 7,
+                "id": 1002,
+                "patient_id": 102,
                 "psychologist_id": 2,
                 "date": today - timedelta(days=8),
                 "time": "11:00",
@@ -145,13 +157,15 @@ def seed_database():
             }
         ]
         for appointment_data in appointments_data:
-            appointment = Appointment(**appointment_data)
-            db.add(appointment)
+            db.add(Appointment(**appointment_data))
         db.commit()
-        # Cria solicitações
+
+        # ============================================================
+        # 📨 4️⃣ SOLICITAÇÕES (IDs 2000–2999)
+        # ============================================================
         requests_data = [
             {
-                "id": 1,
+                "id": 2000,
                 "patient_name": "João Silva",
                 "patient_email": "joao.silva@email.com",
                 "patient_phone": "(11) 99999-1111",
@@ -163,7 +177,7 @@ def seed_database():
                 "status": RequestStatus.PENDENTE
             },
             {
-                "id": 2,
+                "id": 2001,
                 "patient_name": "Ana Oliveira",
                 "patient_email": "ana.oliveira@email.com",
                 "patient_phone": "(11) 88888-2222",
@@ -176,15 +190,17 @@ def seed_database():
             }
         ]
         for request_data in requests_data:
-            request = Request(**request_data)
-            db.add(request)
+            db.add(Request(**request_data))
         db.commit()
+
         print("✅ Dados de teste inseridos com sucesso!")
+
     except Exception as e:
         print(f"❌ Erro ao inserir dados: {e}")
         db.rollback()
     finally:
         db.close()
+
+
 if __name__ == "__main__":
     seed_database()
- 
