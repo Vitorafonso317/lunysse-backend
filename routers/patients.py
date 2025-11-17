@@ -173,3 +173,103 @@ async def add_patient_note(
     
     # TODO: Implementar sistema de anotações separadamente no banco
     return {"id": patient_id, "message": "Anotação adicionada com sucesso"}
+
+# ======================================
+# Rota para listar pacientes aceitos (para mensagens)
+# ======================================
+@router.get("/my-patients")
+async def get_my_patients(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lista pacientes aceitos do psicólogo para sistema de mensagens"""
+    
+    if current_user.type != UserType.PSICOLOGO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas psicólogos podem acessar esta rota"
+        )
+    
+    # Buscar pacientes do psicólogo
+    patients = db.query(Patient).filter(
+        Patient.psychologist_id == current_user.id
+    ).all()
+    
+    # Formatar resposta simples
+    patients_data = []
+    for patient in patients:
+        patients_data.append({
+            "id": patient.id,
+            "name": patient.name,
+            "email": patient.email,
+            "status": patient.status,
+            "can_message": True
+        })
+    
+    return {"patients": patients_data, "total": len(patients_data)}
+
+# ======================================
+# Rota para perfil completo do paciente
+# ======================================
+@router.get("/{patient_id}/profile")
+async def get_patient_profile(
+    patient_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retorna perfil completo do paciente com estatísticas"""
+    from utils.permissions import can_access_patient
+    from models.models import AppointmentStatus
+    
+    if current_user.type != UserType.PSICOLOGO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas psicólogos podem acessar perfis"
+        )
+    
+    if not can_access_patient(current_user.id, patient_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado"
+        )
+    
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paciente não encontrado"
+        )
+    
+    # Estatísticas
+    total_sessions = db.query(Appointment).filter(
+        Appointment.patient_id == patient_id
+    ).count()
+    
+    completed_sessions = db.query(Appointment).filter(
+        Appointment.patient_id == patient_id,
+        Appointment.status == AppointmentStatus.CONCLUIDO
+    ).count()
+    
+    attendance_rate = (completed_sessions / total_sessions * 100) if total_sessions > 0 else 0
+    
+    return {
+        "patient": {
+            "id": patient.id,
+            "name": patient.name,
+            "email": patient.email,
+            "phone": patient.phone,
+            "birth_date": patient.birth_date,
+            "age": patient.age,
+            "status": patient.status,
+            "emergency_contact": patient.emergency_contact,
+            "emergency_phone": patient.emergency_phone,
+            "medical_history": patient.medical_history,
+            "current_medications": patient.current_medications
+        },
+        "stats": {
+            "total_sessions": total_sessions,
+            "completed_sessions": completed_sessions,
+            "attendance_rate": round(attendance_rate, 1)
+        }
+    }

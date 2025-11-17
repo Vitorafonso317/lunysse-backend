@@ -9,7 +9,7 @@
 # - Enums: Status e tipos utilizados no sistema
 # ============================================================================
 
-from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Text, Enum, Boolean
 from sqlalchemy.orm import relationship
 from core.database import Base
 from datetime import datetime, timezone
@@ -82,13 +82,20 @@ class User(Base):
     type = Column(Enum(UserType))  # PSICOLOGO ou PACIENTE
     name = Column(String)  # Nome completo do usuário
     
+    # Campos de perfil
+    avatar_url = Column(String, nullable=True)  # URL da foto de perfil
+    phone = Column(String, nullable=True)  # Telefone de contato
+    birth_date = Column(Date, nullable=True)  # Data de nascimento
+    
     # Campos específicos para psicólogos
     specialty = Column(String, nullable=True)  # Especialidade (ex: TCC, Infantil)
     crp = Column(String, nullable=True)  # Registro profissional
-    phone = Column(String, nullable=True)  # Telefone de contato
     
-    # Metadados
+    # Campos de auditoria
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc))
+    last_login = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
 
 # ============================================================================
 # MODELO PATIENT - INFORMAÇÕES DETALHADAS DOS PACIENTES
@@ -117,15 +124,21 @@ class Patient(Base):
     
     # Informações clínicas
     status = Column(String)  # Status do tratamento (Ativo, Em tratamento, etc.)
+    emergency_contact = Column(String, nullable=True)  # Contato de emergência
+    emergency_phone = Column(String, nullable=True)  # Telefone de emergência
+    medical_history = Column(Text, nullable=True)  # Histórico médico
+    current_medications = Column(Text, nullable=True)  # Medicações atuais
     
     # Relacionamento com psicólogo
-    psychologist_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    psychologist_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     
     # Metadados
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc))
    
     # Relacionamentos ORM
     psychologist = relationship("User", foreign_keys=[psychologist_id])
+    appointments = relationship("Appointment", back_populates="patient")
 
 # ============================================================================
 # MODELO APPOINTMENT - AGENDAMENTOS E SESSÕES
@@ -146,11 +159,11 @@ class Appointment(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # Relacionamentos (quem participa da sessão)
-    patient_id = Column(Integer, ForeignKey("patients.id"))
-    psychologist_id = Column(Integer, ForeignKey("users.id"))
+    patient_id = Column(Integer, ForeignKey("patients.id"), index=True)
+    psychologist_id = Column(Integer, ForeignKey("users.id"), index=True)
     
     # Informações da sessão
-    date = Column(Date)  # Data da sessão
+    date = Column(Date, index=True)  # Data da sessão
     time = Column(String)  # Horário (formato: "14:00")
     status = Column(Enum(AppointmentStatus))  # Status atual
     description = Column(String)  # Descrição/tipo da sessão
@@ -162,9 +175,10 @@ class Appointment(Base):
     
     # Metadados
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc))
    
     # Relacionamentos ORM
-    patient = relationship("Patient")
+    patient = relationship("Patient", back_populates="appointments")
     psychologist = relationship("User")
 
 # ============================================================================
@@ -209,3 +223,39 @@ class Request(Base):
    
     # Relacionamentos ORM
     psychologist = relationship("User")
+
+# ============================================================================
+# MODELO MESSAGE - SISTEMA DE MENSAGENS
+# ============================================================================
+
+class Message(Base):
+    """
+    Tabela de mensagens entre pacientes e psicólogos.
+    
+    Permite:
+    - Comunicação segura entre usuários
+    - Controle de leitura das mensagens
+    - Histórico completo de conversas
+    """
+    __tablename__ = "messages"
+   
+    # Chave primária
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Relacionamentos (quem envia e recebe)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # Conteúdo da mensagem
+    content = Column(Text, nullable=False)  # Texto da mensagem
+    
+    # Controle de leitura
+    is_read = Column(Boolean, default=False)  # False = não lida, True = lida
+    read_at = Column(DateTime, nullable=True)  # Quando foi lida
+    
+    # Metadados
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+   
+    # Relacionamentos ORM
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])

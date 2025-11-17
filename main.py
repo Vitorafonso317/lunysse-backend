@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from models import models  # Importa os modelos do banco de dados
 from core.database import engine, Base  # Importa configuração do banco
-from routers import auth, patients, psychologists, appointments, requests, ml_analysis, reports
+from routers import auth, patients, psychologists, appointments, requests, ml_analysis, reports, messages
 
 # ============================================================================
 # CONFIGURAÇÃO INICIAL
@@ -52,7 +52,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,  # Origens permitidas
     allow_credentials=True,      # Permite cookies/autenticação
-    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Métodos HTTP permitidos
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Métodos HTTP permitidos
     allow_headers=["*"],         # Todos os headers permitidos
 )
 
@@ -69,6 +69,7 @@ app.include_router(appointments.router)  # /appointments/* - CRUD de agendamento
 app.include_router(requests.router)      # /requests/* - Solicitações de agendamento
 app.include_router(ml_analysis.router)   # /ml/* - Análise de risco com ML
 app.include_router(reports.router)       # /reports/* - Relatórios e estatísticas
+app.include_router(messages.router)      # /messages/* - Sistema de mensagens
 
 # ============================================================================
 # ROTAS BÁSICAS DE SISTEMA

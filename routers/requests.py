@@ -133,6 +133,68 @@ def update_request(
     request.preferred_times = json.loads(request.preferred_times) if request.preferred_times else []
  
     return request
- 
- 
- 
+
+@router.patch("/{request_id}/accept")
+async def accept_patient_request(
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Aceita solicitação e cria relacionamento psicólogo-paciente"""
+    
+    if current_user.type != UserType.PSICOLOGO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas psicólogos podem aceitar solicitações"
+        )
+    
+    # Buscar solicitação
+    request = db.query(Request).filter(
+        Request.id == request_id,
+        Request.preferred_psychologist == current_user.id
+    ).first()
+    
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Solicitação não encontrada"
+        )
+    
+    # Atualizar status da solicitação
+    request.status = RequestStatus.ACEITO
+    request.updated_at = datetime.utcnow()
+    
+    # Importar Patient aqui para evitar import circular
+    from models.models import Patient
+    from Utils import calculate_age
+    from datetime import date
+    
+    # Verificar se paciente já existe
+    existing_patient = db.query(Patient).filter(
+        Patient.email == request.patient_email
+    ).first()
+    
+    if not existing_patient:
+        # Criar novo paciente
+        new_patient = Patient(
+            name=request.patient_name,
+            email=request.patient_email,
+            phone=request.patient_phone,
+            birth_date=date(1990, 1, 1),  # Data padrão
+            age=calculate_age(date(1990, 1, 1)),
+            psychologist_id=current_user.id,
+            status="Ativo"
+        )
+        db.add(new_patient)
+    else:
+        # Atualizar paciente existente
+        existing_patient.psychologist_id = current_user.id
+        existing_patient.status = "Ativo"
+    
+    db.commit()
+    
+    return {
+        "message": "Paciente aceito com sucesso",
+        "patient_name": request.patient_name,
+        "can_message": True
+    }

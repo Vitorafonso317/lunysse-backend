@@ -285,8 +285,8 @@ if __name__ == "__main__":
     Executa o script quando chamado diretamente:
     python seed_data.py
     """
-    print("🌱 INICIANDO POPULAÇÃO DO BANCO DE DADOS...")
+    print("INICIANDO POPULACAO DO BANCO DE DADOS...")
     print("=" * 50)
     seed_database()
     print("=" * 50)
-    print("✅ SCRIPT CONCLUÍDO!")
+    print("SCRIPT CONCLUIDO!")

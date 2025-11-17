@@ -47,7 +47,7 @@ def generate_report(db: Session, psychologist_id: int) -> ReportsData:
             canceled_sessions=canceled_sessions,
             scheduled_sessions=scheduled_sessions,
             attendance_rate=f"{attendance_rate:.1f}",
-            risk_alerts=[p["patient"] for p in high_risk_patients]  # nomes dos pacientes de risco
+            risk_alerts=high_risk_patients
         )
 
         print("✅ [REPORT] Estatísticas geradas com sucesso")

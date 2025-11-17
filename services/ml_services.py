@@ -35,6 +35,7 @@ def calculate_patient_risk(db: Session, psychologist_id: int) -> List[Dict]:
             "risk": risk_level,
             "risk_score": risk_score,
             "reason": risk_reason,
+            "date": datetime.now().date().isoformat(),
             "last_appointment": appointments[0].date.isoformat() if appointments else None,
             "metrics": metrics
         })

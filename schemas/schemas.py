@@ -51,9 +51,13 @@ class User(UserBase):
     Retorna dados do usuário sem a senha.
     """
     id: int
+    avatar_url: Optional[str] = None
+    birth_date: Optional[date] = None
     specialty: Optional[str] = None
     crp: Optional[str] = None
     phone: Optional[str] = None
+    last_login: Optional[datetime] = None
+    is_active: bool = True
     created_at: datetime
 
     class Config:
@@ -96,6 +100,10 @@ class Patient(PatientBase):
     id: int
     age: int  # Idade calculada automaticamente
     status: str  # Status do tratamento
+    emergency_contact: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    medical_history: Optional[str] = None
+    current_medications: Optional[str] = None
     psychologist_id: Optional[int] = None
     total_session: Optional[int] = 0  # Total de sessões realizadas
     created_at: datetime
@@ -268,3 +276,33 @@ class ReportsData(BaseModel):
     """
     stats: ReportStats  # Estatísticas gerais
     risk_alerts: List[RiskAlert]  # Lista de alertas de risco
+
+# =========================================================
+# MESSAGE SCHEMAS
+# =========================================================
+class MessageBase(BaseModel):
+    content: str
+
+class MessageCreate(MessageBase):
+    receiver_id: int
+
+class MessageSchema(MessageBase):
+    id: int
+    sender_id: int
+    receiver_id: int
+    is_read: bool
+    read_at: Optional[datetime] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ConversationSchema(BaseModel):
+    user_id: int
+    user_name: str
+    last_message: str
+    last_message_at: datetime
+    unread_count: int
+
+class UnreadCountSchema(BaseModel):
+    unread_count: int
