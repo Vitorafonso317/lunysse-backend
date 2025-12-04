@@ -60,23 +60,23 @@ def seed_database():
         print("✅ Dados limpos com sucesso!")
 
         # ====================================================================
-        # CRIAÇÃO DE USUÁRIOS (IDs 2-5)
+        # CRIAÇÃO DE USUÁRIOS (IDs 1-4)
         # ====================================================================
         
         print("👥 Criando usuários...")
         
         users_data = [
             {
-                "id": 2,
+                "id": 1,
                 "email": "ana@test.com",
-                "password": get_password_hash("123456"),  # Hash da senha
+                "password": get_password_hash("123456"),
                 "type": UserType.PSICOLOGO,
                 "name": "Dra. Ana Costa",
                 "specialty": "Terapia Cognitivo-Comportamental",
                 "crp": "CRP 01/23456"
             },
             {
-                "id": 3,
+                "id": 2,
                 "email": "carlos@test.com",
                 "password": get_password_hash("123456"),
                 "type": UserType.PSICOLOGO,
@@ -85,7 +85,7 @@ def seed_database():
                 "crp": "CRP 01/34567"
             },
             {
-                "id": 4,
+                "id": 3,
                 "email": "lucia@test.com",
                 "password": get_password_hash("123456"),
                 "type": UserType.PSICOLOGO,
@@ -94,7 +94,7 @@ def seed_database():
                 "crp": "CRP 01/45678"
             },
             {
-                "id": 5,
+                "id": 4,
                 "email": "paciente@test.com",
                 "password": get_password_hash("123456"),
                 "type": UserType.PACIENTE,
@@ -110,51 +110,51 @@ def seed_database():
         print(f"✅ {len(users_data)} usuários criados!")
 
         # ====================================================================
-        # CRIAÇÃO DE PACIENTES DETALHADOS (IDs 100-103)
+        # CRIAÇÃO DE PACIENTES DETALHADOS (IDs 5-8)
         # ====================================================================
         
         print("🏥 Criando pacientes...")
         
         patients_data = [
             {
-                "id": 100,
+                "id": 5,
                 "name": "Fernanda Lima",
                 "email": "fernanda.lima@email.com",
                 "phone": "(11) 99999-5555",
-                "birth_date": date(1992, 3, 12),  # 32 anos
+                "birth_date": date(1992, 3, 12),
                 "age": 32,
                 "status": "Em tratamento",
-                "psychologist_id": 2  # Dra. Ana Costa
+                "psychologist_id": 1
             },
             {
-                "id": 101,
+                "id": 6,
                 "name": "Lucas Pereira",
                 "email": "lucas.pereira@email.com",
                 "phone": "(11) 99999-6666",
-                "birth_date": date(1987, 11, 25),  # 37 anos
+                "birth_date": date(1987, 11, 25),
                 "age": 37,
                 "status": "Ativo",
-                "psychologist_id": 2  # Dra. Ana Costa
+                "psychologist_id": 1
             },
             {
-                "id": 102,
+                "id": 7,
                 "name": "Camila Rodrigues",
                 "email": "camila.rodrigues@email.com",
                 "phone": "(11) 99999-7777",
-                "birth_date": date(1993, 9, 8),  # 31 anos
+                "birth_date": date(1993, 9, 8),
                 "age": 31,
                 "status": "Em tratamento",
-                "psychologist_id": 2  # Dra. Ana Costa
+                "psychologist_id": 1
             },
             {
-                "id": 103,
+                "id": 8,
                 "name": "Maria Santos",
                 "email": "paciente@test.com",
                 "phone": "(11) 99999-0001",
-                "birth_date": date(1990, 5, 15),  # 34 anos
+                "birth_date": date(1990, 5, 15),
                 "age": 34,
                 "status": "Ativo",
-                "psychologist_id": 2  # Dra. Ana Costa
+                "psychologist_id": 1
             }
         ]
         
@@ -166,7 +166,7 @@ def seed_database():
         print(f"✅ {len(patients_data)} pacientes criados!")
 
         # ====================================================================
-        # CRIAÇÃO DE AGENDAMENTOS (IDs 1000-1002)
+        # CRIAÇÃO DE AGENDAMENTOS (IDs 11-13)
         # ====================================================================
         
         print("📅 Criando agendamentos...")
@@ -174,10 +174,10 @@ def seed_database():
         today = date.today()
         appointments_data = [
             {
-                "id": 1000,
-                "patient_id": 103,  # Maria Santos
-                "psychologist_id": 2,  # Dra. Ana Costa
-                "date": today - timedelta(days=2),  # 2 dias atrás
+                "id": 9,
+                "patient_id": 8,
+                "psychologist_id": 1,
+                "date": today - timedelta(days=2),
                 "time": "14:00",
                 "status": AppointmentStatus.CONCLUIDO,
                 "description": "Terapia cognitivo-comportamental",
@@ -186,10 +186,10 @@ def seed_database():
                 "full_report": "Paciente respondeu bem às intervenções."
             },
             {
-                "id": 1001,
-                "patient_id": 101,  # Lucas Pereira
-                "psychologist_id": 2,  # Dra. Ana Costa
-                "date": today + timedelta(days=2),  # Daqui a 2 dias
+                "id": 10,
+                "patient_id": 6,
+                "psychologist_id": 1,
+                "date": today + timedelta(days=2),
                 "time": "15:00",
                 "status": AppointmentStatus.AGENDADO,
                 "description": "Sessão de acompanhamento",
@@ -198,14 +198,14 @@ def seed_database():
                 "full_report": ""
             },
             {
-                "id": 1002,
-                "patient_id": 102,  # Camila Rodrigues
-                "psychologist_id": 2,  # Dra. Ana Costa
-                "date": today - timedelta(days=8),  # 8 dias atrás
+                "id": 11,
+                "patient_id": 7,
+                "psychologist_id": 1,
+                "date": today - timedelta(days=8),
                 "time": "11:00",
                 "status": AppointmentStatus.CONCLUIDO,
                 "description": "Sessão inicial",
-                "duration": 60,  # Primeira sessão mais longa
+                "duration": 60,
                 "notes": "Primeira consulta bem-sucedida.",
                 "full_report": "Estabelecimento de vínculo terapêutico."
             }
@@ -219,30 +219,30 @@ def seed_database():
         print(f"✅ {len(appointments_data)} agendamentos criados!")
 
         # ====================================================================
-        # CRIAÇÃO DE SOLICITAÇÕES (IDs 2000-2001)
+        # CRIAÇÃO DE SOLICITAÇÕES (IDs 14-15)
         # ====================================================================
         
         print("📨 Criando solicitações...")
         
         requests_data = [
             {
-                "id": 2000,
+                "id": 12,
                 "patient_name": "João Silva",
                 "patient_email": "joao.silva@email.com",
                 "patient_phone": "(11) 99999-1111",
-                "preferred_psychologist": 2,  # Dra. Ana Costa
+                "preferred_psychologist": 1,
                 "description": "Gostaria de agendar uma sessão. Preciso de ajuda com ansiedade e estresse no trabalho.",
                 "urgency": "media",
-                "preferred_dates": json.dumps(["2024-12-20", "2024-12-21"]),  # JSON string
+                "preferred_dates": json.dumps(["2024-12-20", "2024-12-21"]),
                 "preferred_times": json.dumps(["14:00", "15:00"]),
                 "status": RequestStatus.PENDENTE
             },
             {
-                "id": 2001,
+                "id": 13,
                 "patient_name": "Ana Oliveira",
                 "patient_email": "ana.oliveira@email.com",
                 "patient_phone": "(11) 88888-2222",
-                "preferred_psychologist": 3,  # Dr. Carlos Mendes (psicologia infantil)
+                "preferred_psychologist": 2,
                 "description": "Gostaria de agendar uma sessão para meu filho de 8 anos.",
                 "urgency": "alta",
                 "preferred_dates": json.dumps(["2024-12-19"]),

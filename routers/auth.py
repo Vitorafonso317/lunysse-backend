@@ -103,53 +103,50 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         3. Se for paciente, cria registro na tabela patients
         4. Gera token JWT automaticamente
         5. Retorna token para login automático
-    
-    Args:
-        user_data: Dados do novo usuário (email, senha, nome, tipo, etc.)
-        db: Sessão do banco de dados
-    
-    Returns:
-        Token: Token JWT e dados do usuário criado
-    
-    Raises:
-        HTTPException 400: Se email já cadastrado
-    
-    Exemplo de uso:
-        POST /auth/register
-        {
-            "email": "novo@test.com",
-            "password": "123456",
-            "name": "João Silva",
-            "type": "paciente",
-            "birth_date": "1990-05-15"
-        }
     """
-    # Verifica se usuário já existe
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
+    print(f"[REGISTER] Dados recebidos: {user_data.dict()}")
+    
+    try:
+        existing_user = db.query(User).filter(User.email == user_data.email).first()
+        if existing_user:
+            print(f"[REGISTER] Email já cadastrado: {user_data.email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email já cadastrado"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[REGISTER] Erro ao verificar email: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado"
+            detail=f"Erro no registro: {str(e)}"
         )
     
-    # Cria hash seguro da senha
-    hashed_password = get_password_hash(user_data.password)
-    
-    # Cria novo usuário na tabela users
-    db_user = User(
-        email=user_data.email,
-        password=hashed_password,  # Armazena apenas o hash, nunca a senha pura
-        name=user_data.name,
-        type=user_data.type,
-        specialty=user_data.specialty,  # Apenas para psicólogos
-        crp=user_data.crp,             # Apenas para psicólogos
-        phone=user_data.phone
-    )
-    
-    # Salva usuário no banco
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)  # Atualiza objeto com ID gerado
+    try:
+        hashed_password = get_password_hash(user_data.password)
+        
+        db_user = User(
+            email=user_data.email,
+            password=hashed_password,
+            name=user_data.name,
+            type=user_data.type,
+            specialty=user_data.specialty,
+            crp=user_data.crp,
+            phone=user_data.phone
+        )
+        
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        print(f"[REGISTER] Usuário criado com ID: {db_user.id}")
+    except Exception as e:
+        print(f"[REGISTER] Erro ao criar usuário: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao criar usuário: {str(e)}"
+        )
     
     # ========================================================================
     # CRIAÇÃO AUTOMÁTICA DE PACIENTE
