@@ -25,17 +25,21 @@ async def get_patients(
             detail="Apenas psicólogos podem acessar lista de pacientes"
         )
     
+    print(f"[DEBUG] Buscando pacientes do psicólogo ID: {current_user.id}")
+    
     patients = db.query(Patient).filter(
         Patient.psychologist_id == current_user.id
     ).all()
     
-    # Calcula o total de sessões para cada paciente e mantém o nome do campo do schema (total_session)
+    print(f"[DEBUG] Encontrados {len(patients)} pacientes")
+    for p in patients:
+        print(f"[DEBUG] Paciente: {p.name} (ID: {p.id}, Email: {p.email})")
+    
     for patient in patients:
         total_sessions = db.query(Appointment).filter(
             Appointment.patient_id == patient.id,
             Appointment.psychologist_id == current_user.id
         ).count()
-        # Usa o mesmo nome de campo definido no schema: total_session
         patient.total_session = total_sessions
     
     return patients

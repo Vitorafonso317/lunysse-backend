@@ -130,9 +130,9 @@ class AppointmentBase(BaseModel):
 class AppointmentCreate(AppointmentBase):
     """
     Schema para criação de agendamentos.
-    Psicólogo pode ser inferido do usuário logado.
+    Psicólogo é inferido do usuário logado.
     """
-    psychologist_id: Optional[int] = None
+    pass
 
 class AppointmentUpdate(BaseModel):
     """
@@ -174,9 +174,9 @@ class RequestBase(BaseModel):
     patient_phone: str
     preferred_psychologist: int  # ID do psicólogo desejado
     description: str  # Motivo da solicitação
-    urgency: str  # Nível de urgência (baixa, média, alta)
-    preferred_dates: List[str]  # Datas preferidas ["2024-12-20", "2024-12-21"]
-    preferred_times: List[str]  # Horários preferidos ["14:00", "15:00"]
+    urgency: Optional[str] = "media"  # Nível de urgência (baixa, média, alta)
+    preferred_dates: Optional[List[str]] = []  # Datas preferidas ["2024-12-20", "2024-12-21"]
+    preferred_times: Optional[List[str]] = []  # Horários preferidos ["14:00", "15:00"]
 
 class RequestCreate(RequestBase):
     """

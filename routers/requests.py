@@ -61,12 +61,12 @@ async def create_request(
     request_data: RequestCreate,
     db: Session = Depends(get_db)
 ):
+    print(f"[REQUEST] Dados recebidos: {request_data.dict()}")
     """
     Paciente cria solicitação.
     Verifica pendência.
     Envia email para o psicólogo.
     """
-
     existing_request = db.query(Request).filter(
         Request.patient_email == request_data.patient_email,
         Request.preferred_psychologist == request_data.preferred_psychologist,
@@ -179,5 +179,4 @@ async def update_request(
     request.preferred_times = json.loads(request.preferred_times) if request.preferred_times else []
 
     return request
-
 

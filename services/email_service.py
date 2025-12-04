@@ -134,7 +134,6 @@ def send_email_new_request_to_psychologist(psychologist_email: str, psychologist
         sender_email=email,
         sender_name="Sistema de Agendamentos"
     )
-
  # =============================
 # EMAIL: ALTERAÇÃO DE STATUS DO AGENDAMENTO
 # =============================
@@ -146,7 +145,6 @@ def send_email_appointment_status_change(
     appointment_date: str
 ):
     email = os.getenv("EMAIL_DOMAIN")
-
     html = f"""
         <h3>Olá {patient_name},</h3>
         <p>O status do seu agendamento foi atualizado.</p>
@@ -156,7 +154,6 @@ def send_email_appointment_status_change(
         <br>
         <p>Caso tenha dúvidas, entre em contato com seu psicólogo.</p>
     """
-
     return send_email(
         to_email=patient_email,
         subject="Atualização no Status do Agendamento",
@@ -197,7 +194,6 @@ def send_email_appointment_status_update(
         sender_email=sender,
         sender_name="Sistema de Agendamentos"
     )
-
 # =============================
 # EMAIL: AGENDAMENTO CANCELADO (CANCEL)
 # =============================
