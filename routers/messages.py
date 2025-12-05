@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, desc, func
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core.database import get_db
 from models.models import Message, User
@@ -90,7 +90,7 @@ async def get_conversation(
         Message.sender_id == user_id,
         Message.receiver_id == current_user.id,
         Message.is_read == False
-    ).update({"is_read": True, "read_at": datetime.utcnow()})
+    ).update({"is_read": True, "read_at": datetime.now(timezone.utc)})
     db.commit()
     
     result = []
@@ -121,7 +121,7 @@ async def mark_as_read(
         raise HTTPException(status_code=404, detail="Mensagem não encontrada")
     
     message.is_read = True
-    message.read_at = datetime.utcnow()
+    message.read_at = datetime.now(timezone.utc)
     db.commit()
     
     return {"success": True}

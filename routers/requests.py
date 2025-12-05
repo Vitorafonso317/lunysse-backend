@@ -4,7 +4,7 @@ from typing import List
 import json
 from datetime import datetime
 from core.database import get_db
-from models.models import Request, User, UserType, RequestStatus
+from models.models import Request, User, UserType, RequestStatus, Patient
 from schemas.schemas import RequestCreate, RequestUpdate, Request as RequestSchema
 from services.auth_service import get_current_user
 from services.email_service import (
@@ -119,6 +119,44 @@ async def create_request(
 
 
 # ============================================================
+# BUSCAR SOLICITAÇÕES POR EMAIL DO PACIENTE
+# ============================================================
+@router.get("/patient/{patient_email}", response_model=List[RequestSchema])
+async def get_requests_by_patient_email(
+    patient_email: str,
+    db: Session = Depends(get_db)
+):
+    requests = db.query(Request).filter(
+        Request.patient_email == patient_email
+    ).all()
+
+    for req in requests:
+        req.preferred_dates = json.loads(req.preferred_dates) if req.preferred_dates else []
+        req.preferred_times = json.loads(req.preferred_times) if req.preferred_times else []
+
+    return requests
+
+
+# ============================================================
+# BUSCAR SOLICITAÇÕES POR ID DO PSICÓLOGO
+# ============================================================
+@router.get("/psychologist/{psychologist_id}", response_model=List[RequestSchema])
+async def get_requests_by_psychologist(
+    psychologist_id: int,
+    db: Session = Depends(get_db)
+):
+    requests = db.query(Request).filter(
+        Request.preferred_psychologist == psychologist_id
+    ).all()
+
+    for req in requests:
+        req.preferred_dates = json.loads(req.preferred_dates) if req.preferred_dates else []
+        req.preferred_times = json.loads(req.preferred_times) if req.preferred_times else []
+
+    return requests
+
+
+# ============================================================
 # ATUALIZAR SOLICITAÇÃO (MUDAR STATUS)
 # ============================================================
 @router.put("/{request_id}", response_model=RequestSchema)
@@ -153,6 +191,27 @@ async def update_request(
     request.status = update_data.status
     request.notes = update_data.notes or ""
     request.updated_at = datetime.utcnow()
+
+    # Se aceito, criar ou vincular paciente
+    if update_data.status == RequestStatus.ACEITO:
+        existing_patient = db.query(Patient).filter(Patient.email == request.patient_email).first()
+        if existing_patient:
+            # Vincular ao psicólogo
+            existing_patient.psychologist_id = current_user.id
+            existing_patient.status = "Ativo"
+        else:
+            # Criar novo paciente
+            from datetime import date
+            new_patient = Patient(
+                name=request.patient_name,
+                email=request.patient_email,
+                phone=request.patient_phone,
+                birth_date=date(2000, 1, 1),
+                age=24,
+                status="Ativo",
+                psychologist_id=current_user.id
+            )
+            db.add(new_patient)
 
     db.commit()
     db.refresh(request)
