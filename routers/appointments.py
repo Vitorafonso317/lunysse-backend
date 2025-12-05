@@ -123,6 +123,9 @@ async def create_appointment(
 # ===========================================
 # 4️⃣ Atualizar agendamento existente
 # ===========================================
+# ===========================================
+# 4️⃣ Atualizar agendamento existente
+# ===========================================
 @router.put("/{appointment_id}", response_model=AppointmentSchema)
 async def update_appointment(
     appointment_id: int,
@@ -141,32 +144,48 @@ async def update_appointment(
             detail="Agendamento não encontrado."
         )
 
-    old_status = appointment.status.value if appointment.status else None
-    
-    for field, value in appointment_data.dict(exclude_unset=True).items():
+    # 1️⃣ Guardar o status anterior
+    old_status = appointment.status
+
+    # 2️⃣ Atualizar campos normalmente
+    update_fields = appointment_data.dict(exclude_unset=True)
+    for field, value in update_fields.items():
         setattr(appointment, field, value)
 
     db.commit()
     db.refresh(appointment)
 
-    # Enviar email de atualização
-    try:
-        from services.email_service import send_email_appointment_status_update
+    # 3️⃣ Enviar e-mail apenas se o status mudou
+    if "status" in update_fields and old_status != appointment.status:
+
+        # Converter enums para string
+        try:
+            old_status_str = old_status.value
+        except:
+            old_status_str = str(old_status)
+
+        try:
+            new_status_str = appointment.status.value
+        except:
+            new_status_str = str(appointment.status)
+
+        # Buscar o paciente no banco
+        from models.models import Patient
         patient = db.query(Patient).filter(Patient.id == appointment.patient_id).first()
-        if patient and patient.email:
-            new_status = appointment.status.value if appointment.status else None
-            send_email_appointment_status_update(
+
+        if patient:  # evita erro se não existir
+            send_email_appointment_status_change(
                 patient_email=patient.email,
                 patient_name=patient.name,
+                old_status=old_status_str,
+                new_status=new_status_str,
                 appointment_date=str(appointment.date),
-                appointment_time=appointment.time,
-                old_status=old_status or "anterior",
-                new_status=new_status or "atualizado"
+                appointment_time=str(appointment.time),
             )
-    except Exception as e:
-        print(f"Erro ao enviar email: {e}")
 
     return appointment
+
+
 
 
 # ===========================================
